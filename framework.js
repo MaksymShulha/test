@@ -1,0 +1,42 @@
+
+// Файл, демонстрирующий то, как фреймворк создает среду (песочницу) для
+// исполнения приложения, загружает приложение, передает ему песочницу в
+// качестве глобального контекста и получает ссылу на экспортируемый
+// приложением интерфейс. Читайте README.md в нем задания.
+
+// Фреймворк может явно зависеть от библиотек через dependency lookup
+var fs = require('fs'),
+    vm = require('vm'),
+    util = require('util');
+
+// Чоздаем контекст-песочницу, которая станет глобальным контекстом приложения
+var context = { module: {}, console: console, setTimeout: setTimeout, setInterval: setInterval, isString: function (arg) { console.log("is string function - arg:" + arg); },
+    log: function (arg) { console.log(arg); }
+};
+
+context.global = context;
+var sandbox = vm.createContext(context);
+
+// Читаем исходный код приложения из файла
+context.console.logEx = context.console.log;
+context.console.log = function (s) { console.logEx(s); };
+
+//var fileName = './application.js';
+
+var fileName = './' + process.argv[2];
+
+
+/*process.argv.forEach(function (val, index, array) {
+    console.log(index + ': ' + val);
+});*/
+
+fs.readFile(fileName, function(err, src) {
+  // Тут нужно обработать ошибки
+  
+  // Запускаем код приложения в песочнице
+  var script = vm.createScript(src, fileName);
+  script.runInNewContext(sandbox);
+  
+  // Забираем ссылку из sandbox.module.exports, можем ее исполнить,
+  // сохранить в кеш, вывести на экран исходный код приложения и т.д.
+});
